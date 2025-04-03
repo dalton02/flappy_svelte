@@ -23,6 +23,7 @@ export class Game{
         width:1280,
         height:720
     })
+    interval:NodeJS.Timeout | null = null 
 
     jogadores:Player[] = []
 
@@ -227,6 +228,22 @@ export class Game{
         this.resetarPlayer()        
         await this.cenarioInit()
 
+        
+        this.interval = setInterval(()=>{
+            if(!this.dadosJogador) return
+            this.socketConnection.send(mensagemFormatada("atualizarPlayer",{
+                coordenadas:{
+                    x: this.player.x,
+                    y: this.player.y,
+                    rotacao:this.player.rotation
+                },
+                id:this.dadosJogador.id,
+                nome:this.dadosJogador.nome,
+                pontuacao: this.habilitys.score
+            }))    
+        },200)
+
+
         this.app.ticker.add(async(t) => {        
             this.ticker = t
             await this.guiMan()
@@ -252,23 +269,13 @@ export class Game{
             
             if(this.game.start){
                 this.puloGravidade()
-
-                this.socketConnection.send(mensagemFormatada("atualizarPlayer",{
-                    coordenadas:{
-                        x: this.player.x,
-                        y: this.player.y,
-                        rotacao:this.player.rotation
-                    },
-                    id:this.dadosJogador!.id,
-                    nome:this.dadosJogador!.nome,
-                    pontuacao: this.habilitys.score
-                }))
             }        
         }
 
     }
 
     sock(){
+
         this.socketConnection.onmessage = (m) => {
 
             const conteudo = JSON.parse(m.data) as {tipo:string,conteudo:any}
