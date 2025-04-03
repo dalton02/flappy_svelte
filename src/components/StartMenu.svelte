@@ -11,7 +11,7 @@
 
     let {onLogin}:{onLogin:(r:{id:number,nome:string})=>void} = $props()
 
-    let modo = $state<"login" | "cadastro" | "menu" | "skin">("login")
+    let modo = $state<"login" | "cadastro" | "menu" | "skin">("menu")
 
     const skins = [
         {
