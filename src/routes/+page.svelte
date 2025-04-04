@@ -5,7 +5,7 @@
 	import StartMenu from '../components/StartMenu.svelte';
 	import infoUser from '$lib/front.svelte';
 	import Board from '$components/Board.svelte';
-	import { PUBLIC_BACKEND_COMPLETE_URL, PUBLIC_BACKEND_URL } from '$env/static/public';
+	import {  PUBLIC_BACKEND_URL } from '$env/static/public';
 	import storageService from '$lib/storageService';
 	import axios from 'axios';
 
@@ -44,7 +44,7 @@
         const usuario = storageService.getStoredData("flappy")
         if(usuario && usuario.id && usuario.nome){
             try{
-                const response = await axios.get(PUBLIC_BACKEND_COMPLETE_URL+"/score/"+usuario.id)
+                const response = await axios.get(PUBLIC_BACKEND_URL+"/score/"+usuario.id)
                 usuario.pontuacao = response.data.data.pontuacao;
                 infoUser.info.logado=true
                 const data = response.data.data

@@ -14,10 +14,24 @@ export class Player{
     })
 
     tag: PIXI.Container = new PIXI.Container()
+    
     player:{
         nome:string,
         id:number
     } | null = null
+
+    nextPos:{
+        x:number,
+        y:number,
+        rotacao:number
+    }={
+        x:0,
+        y:0,
+        rotacao:0,
+    }
+
+    cancelarInterpolacao:boolean=false
+
 
     constructor(assetsGen:Assets,word:PIXI.Container,layer:PIXI.IRenderLayer,player:{nome:string,id:number}){
         this.player = player
@@ -34,20 +48,12 @@ export class Player{
 
         })
     }
-
     atualizarMovimento(x:number,y:number,rotacao:number){
-        if(this.sprite===null) return        
-        this.sprite.x=x;
-        this.sprite.y=y;
-        this.sprite.rotation = rotacao
-        if(this.tag===null) return        
-
-        const xPosTag = x - this.tag.width/2 + this.sprite.width/2 
-        const yPosTag = y - this.tag.height - 10 
-
-        this.tag.x=xPosTag;
-        this.tag.y=yPosTag;
-
+        this.nextPos = {
+            x,
+            y,
+            rotacao
+        }
 
         
     }

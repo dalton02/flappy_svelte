@@ -5,7 +5,7 @@
 
 	import Button from "./Button.svelte";
 	import ButtonArrow from "./ButtonArrow.svelte";
-	import { PUBLIC_BACKEND_COMPLETE_URL, PUBLIC_BACKEND_URL } from "$env/static/public";
+	import { PUBLIC_BACKEND_URL } from "$env/static/public";
 	import toast from "$lib/utils/toast.svelte";
 	import SvgCheck from "./svg/SvgCheck.svelte";
 	import { onMount } from "svelte";
@@ -40,7 +40,7 @@
             return  alert("Parem de testar o sistema")
         }
         try{
-            await axios.post(PUBLIC_BACKEND_COMPLETE_URL+"/auth/cadastro",formCadastro)
+            await axios.post(PUBLIC_BACKEND_URL+"/auth/cadastro",formCadastro)
             modo="menu"
         }
         catch(err){
@@ -59,7 +59,7 @@
             return  alert("Parem de testar o sistema")
         }
         try{
-            const response = await axios.post(PUBLIC_BACKEND_COMPLETE_URL+"/auth/login",formLogin)
+            const response = await axios.post(PUBLIC_BACKEND_URL+"/auth/login",formLogin)
             modo="menu"
             infoUser.info.logado=true
             onLogin(response.data.data)

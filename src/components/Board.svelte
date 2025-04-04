@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PUBLIC_BACKEND_COMPLETE_URL } from "$env/static/public";
+	import { PUBLIC_BACKEND_URL } from "$env/static/public";
 	import axios from "axios";
 	import { onMount } from "svelte";
 	import { flip } from "svelte/animate";
@@ -9,7 +9,7 @@
     let scores = $state<{id:number,nome:string,pontuacao:number}[]>([])
     let show = $state(true)
     async function listar(){
-        const response = await axios.get(PUBLIC_BACKEND_COMPLETE_URL+"/scoreboard");
+        const response = await axios.get(PUBLIC_BACKEND_URL+"/scoreboard");
         scores = response.data.data
     }
     function shuffleScores() {

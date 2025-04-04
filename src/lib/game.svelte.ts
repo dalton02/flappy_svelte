@@ -4,7 +4,7 @@ import * as Sound from '@pixi/sound';
 import { io } from 'socket.io-client';
 import { Player } from './player';
 import infoUser from './front.svelte';
-import { PUBLIC_BACKEND_URL } from '$env/static/public';
+import { PUBLIC_BACKEND_URL, PUBLIC_SOCKET_URL } from '$env/static/public';
 import gen from "random-seed"
 
 export class Game{
@@ -60,7 +60,7 @@ export class Game{
         nome:string,
         id:number
     } | null = null 
-    socketConnection = new WebSocket("wss://"+PUBLIC_BACKEND_URL+"/upgrade")
+    socketConnection = new WebSocket(PUBLIC_SOCKET_URL)
                   
 
 
@@ -283,7 +283,60 @@ export class Game{
             }        
         }
 
+        this.interpolacaoPlayers()
+
     }
+
+
+    interpolacaoPlayers(){
+        this.jogadores.forEach((obj)=>{
+            const rotationForce = 0.09;
+            const limitRotation = 0.8
+            const sprite = obj.sprite
+            if(!sprite) return
+    
+
+
+            if(obj.nextPos.y>sprite.y){
+                sprite.y+=2
+            }
+            else if(sprite.y>obj.nextPos.y){
+                sprite.y-=2
+            }
+            if(obj.nextPos.rotacao>sprite.rotation)
+                sprite.rotation+=rotationForce  
+            else
+               sprite.rotation-=rotationForce
+    
+            if(sprite.rotation>limitRotation){
+                sprite.rotation = limitRotation
+            }
+            if(sprite.rotation<-limitRotation){
+               sprite.rotation = -limitRotation
+            }
+ 
+
+
+            let inicioJogo = false
+            if(obj.nextPos.x<this.app.screen.width/2 - this.player.width/2 + 10){
+                inicioJogo=true
+            }
+            if(sprite.x>=obj.nextPos.x || inicioJogo){
+                sprite.x = obj.nextPos.x
+            }
+            if(!inicioJogo && sprite.x<obj.nextPos.x){
+                sprite.x+=this.habilitys.vX
+            }
+            const xPosTag = sprite.x - obj.tag.width/2 + sprite.width/2 
+            const yPosTag = sprite.y - obj.tag.height - 10 
+            obj.tag.x=xPosTag;
+            obj.tag.y=yPosTag;
+        
+
+        })
+        }
+    
+    
 
     sock(){
         this.socketConnection.onerror = (m)=>{
