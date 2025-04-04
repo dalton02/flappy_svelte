@@ -5,6 +5,7 @@ import { io } from 'socket.io-client';
 import { Player } from './player';
 import infoUser from './front.svelte';
 import { PUBLIC_BACKEND_URL } from '$env/static/public';
+import gen from "random-seed"
 
 export class Game{
     
@@ -24,6 +25,8 @@ export class Game{
         height:720
     })
     interval:NodeJS.Timeout | null = null 
+
+    mapa:{y:number,gap:number,marginLeft:number}[] = []
 
     jogadores:Player[] = []
 
@@ -57,13 +60,14 @@ export class Game{
         nome:string,
         id:number
     } | null = null 
-    
-    socketConnection = new WebSocket("wss://"+PUBLIC_BACKEND_URL+"/upgrade")
+    socketConnection = new WebSocket("ws://"+PUBLIC_BACKEND_URL+"/upgrade")
+                  
 
 
     constructor(){
+        this.sock()
+        this.mapa = cenarioDoDia()
         this.init()
-
     }
 
     async cenarioInit(){
@@ -108,70 +112,78 @@ export class Game{
     }
 
 
+    async gerarCanos(x:number,y:number,gap:number,marginLeft:number){
+        const widthCano = 50
+        const variacaoGapCano = gap
+        const variacaoSubidaCano = y
+        const canoCima = await this.assetGenerator.gerarCano()
+        const canoBaixo = await this.assetGenerator.gerarCano()
+        const powerSlow = await this.assetGenerator.gerarSlowPower()
+        
+
+
+        canoCima.label='cano'
+        canoCima.rotation = 3.141593
+        canoCima.y= variacaoSubidaCano
+        canoCima.x = x+marginLeft
+
+
+        canoBaixo.label='cano'
+        canoBaixo.y= variacaoSubidaCano + variacaoGapCano
+        canoBaixo.x = x+marginLeft
+
+        const hitbox = new PIXI.Graphics().rect(0,0,widthCano/2,variacaoGapCano+canoCima.height).fill("transparent")            
+        hitbox.x = canoBaixo.x - hitbox.width/2
+        hitbox.y = 100
+        hitbox.label="scoreBox"
+
+        const poderAgora = Math.random()*50
+        if(poderAgora>46){
+            powerSlow.x = canoBaixo.x  + gap/2
+            powerSlow.y = canoBaixo.y -  60
+            this.world.addChild(powerSlow)
+            this.stagePipes.attach(powerSlow)    
+        }
+        
+        this.world.addChild(hitbox)
+        this.stagePipes.attach(hitbox)
+    
+        this.world.addChild(canoCima)
+        this.stagePipes.attach(canoCima)
+
+        this.world.addChild(canoBaixo)
+        this.stagePipes.attach(canoBaixo)
+
+    }
 
     async pipesGen(){
 
-        const totalCanos = 60
-        const widthCano = 50
+        const totalCanos = 8
+        const primeiroCanoX = 800
+        const distanciaCanos = 250
 
         let canos = this.stagePipes.renderLayerChildren.filter((obj)=>obj.label=="cano")
-        const tmp = this.stageScene.renderLayerChildren.find(obj=>obj.label==="terreno")
-        
-        while(canos.length<totalCanos){
-            
-            const limiteVariacaoSubida = 200
-            const ultimoCano = canos[canos.length-1]
-            const gap = this.randomIntFromInterval(350,400)
-            const variacaoGapCano = this.randomIntFromInterval(175,210)
-            const variacaoSubidaCano = this.randomIntFromInterval(80,limiteVariacaoSubida)
-            const canoCima = await this.assetGenerator.gerarCano()
-            const canoBaixo = await this.assetGenerator.gerarCano()
-            const powerSlow = await this.assetGenerator.gerarSlowPower()
-            
-            
-
-            const xPos = ultimoCano ? ultimoCano.x + gap :  this.app.screen.width
-
-            canoCima.label='cano'
-            canoCima.rotation = 3.141593
-            canoCima.y= variacaoSubidaCano
-            canoCima.x = xPos
-
-
-            canoBaixo.label='cano'
-            canoBaixo.y= variacaoSubidaCano + variacaoGapCano
-            canoBaixo.x = xPos
-
-            const hitbox = new PIXI.Graphics().rect(0,0,widthCano/2,variacaoGapCano+canoCima.height).fill("transparent")            
-            hitbox.x = canoBaixo.x - hitbox.width/2
-            hitbox.y = 100
-            hitbox.label="scoreBox"
-
-            const poderAgora = Math.random()*50
-            if(poderAgora>46){
-                powerSlow.x = canoBaixo.x  + gap/2
-                powerSlow.y = canoBaixo.y -  60
-                this.world.addChild(powerSlow)
-                this.stagePipes.attach(powerSlow)    
-            }
-            
-            this.world.addChild(hitbox)
-            this.stagePipes.attach(hitbox)
-        
-            this.world.addChild(canoCima)
-            this.stagePipes.attach(canoCima)
-
-            this.world.addChild(canoBaixo)
-            this.stagePipes.attach(canoBaixo)
-
-            canos = this.stagePipes.renderLayerChildren.filter((obj)=>obj.label==="cano")
-        }
-
-        this.stagePipes.renderLayerChildren.map((obj)=>{
-            if(obj.label!=="cano" && obj.label!=="scoreBox") return obj
+        canos.map((obj)=>{
             if(obj.x>(-this.world.x-obj.width)  ) return obj
             this.world.removeChild(obj)
         })
+        canos = this.stagePipes.renderLayerChildren.filter((obj)=>obj.label=="cano")
+
+        if(canos.length>=totalCanos) return
+        
+        while(this.stagePipes.renderLayerChildren[0]) { 
+            this.world.removeChild(this.stagePipes.renderLayerChildren[0]); 
+        }
+
+        const range = calcularRange(this.habilitys.score,totalCanos)
+
+        for(let i=range[0];i<range[1]+totalCanos/2;i++){
+            this.gerarCanos(primeiroCanoX+(distanciaCanos*i),this.mapa[i].y,this.mapa[i].gap,this.mapa[i].marginLeft)
+        }
+
+
+
+
 
     }
 
@@ -224,7 +236,6 @@ export class Game{
         Sound.sound.add('point','/sons/point.mp3');
         
         this.player = await this.assetGenerator.gerarPersonagem()    
-        this.sock()
         this.resetarPlayer()        
         await this.cenarioInit()
 
@@ -275,14 +286,16 @@ export class Game{
     }
 
     sock(){
+        this.socketConnection.onerror = (m)=>{
+            console.log(m)
+        }
 
         this.socketConnection.onmessage = (m) => {
 
             const conteudo = JSON.parse(m.data) as {tipo:string,conteudo:any}
-            console.log(conteudo)
 
             if(conteudo.tipo==="conectado"){
-                
+                console.log("Conectado ao websocket 😂🚀🎉")
 
             }
 
@@ -300,6 +313,7 @@ export class Game{
                 }[],
                 mensagem:string
                 }
+                console.log(tmp)
                 const dados = tmp.jogadores
                 for(const dado of dados){
                     if(dado.id===this.dadosJogador!.id) continue
@@ -318,9 +332,9 @@ export class Game{
                     }
                     return true
                 })
-                console.log("Jogadores do cliente: ",this.jogadores)
                 
                 this.jogadores.forEach((obj)=>{
+
                     dados.forEach(obj2=>{
                         if(obj2.id===obj.player!.id){
                             obj.atualizarMovimento(obj2.coordenadas.x,obj2.coordenadas.y,obj2.coordenadas.rotacao)
@@ -511,4 +525,26 @@ const mensagemFormatada = (tipo:string,conteudo:Record<string,any>) => {
         tipo:tipo,
         conteudo:conteudo
     })
+}
+function calcularRange(ponto:number, rangeTotal:number):[number,number] {
+    const metade = Math.floor(rangeTotal / 2); // Divisão inteira
+    const limiteInferior = Math.max(0, ponto - metade);
+    const limiteSuperior = ponto + metade;
+    return [limiteInferior, limiteSuperior];
+}
+
+const cenarioDoDia = () => {
+    const tmp = [] 
+    const tamanho = 5000
+    const dataAtual = new Date()
+    const dataSeed = `${dataAtual.getDate()}-${dataAtual.getUTCMonth()}-${dataAtual.getFullYear()}`
+    for(let i=0;i<tamanho;i++){
+        const rand = gen.create(dataSeed+" - Seed: "+i.toString())
+        tmp.push({
+            y:rand.floatBetween(0,170),
+            gap:rand.floatBetween(180,220),
+            marginLeft: rand.floatBetween(0,20)
+        })
+    }
+    return tmp
 }

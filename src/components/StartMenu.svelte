@@ -8,8 +8,10 @@
 	import { PUBLIC_BACKEND_COMPLETE_URL, PUBLIC_BACKEND_URL } from "$env/static/public";
 	import toast from "$lib/utils/toast.svelte";
 	import SvgCheck from "./svg/SvgCheck.svelte";
+	import { onMount } from "svelte";
+	import storageService from "$lib/storageService";
 
-    let {onLogin}:{onLogin:(r:{id:number,nome:string})=>void} = $props()
+    let {onLogin}:{onLogin:(r:{id:number,nome:string,pontuacao:string})=>void} = $props()
 
     let modo = $state<"login" | "cadastro" | "menu" | "skin">("menu")
 
@@ -43,7 +45,7 @@
         }
         catch(err){
             const error = err as any
-            toast.error("Notificação do sistema",error.response.data.message)
+            alert(error.response.data.message)
 
         }
     }
@@ -64,9 +66,10 @@
         }
         catch(err){
             const error = err as any
-            toast.error("Notificação do sistema",error.response.data.message)
+            alert(error.response.data.message)
         }
     }
+
 </script>
 
 <div class="flex flex-col justify-center gap-12 items-center text-white w-full h-full bg-[rgba(0,0,0,.4)]">
@@ -93,8 +96,18 @@
                 Play
             </Button>
 
+
+
             <Button onClick={()=>modo="skin"}> 
                 Trocar Skin
+            </Button>
+
+            <div class="mt-18"></div>
+            <Button onClick={()=>{
+                infoUser.info.logado=false
+                storageService.clearAllStoredData()
+            }}> 
+                Deslogar
             </Button>
 
 
@@ -169,5 +182,14 @@
         {/if}
 
     </div>
+
+</div>
+
+
+<div class="rounded-md relative w-20 h-20">
+    <div class="absolute top-0 left-0 border border-[rgba(255,255,255,.1)]">
+
+    </div>
+
 
 </div>
