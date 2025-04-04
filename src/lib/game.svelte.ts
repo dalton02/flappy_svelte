@@ -60,7 +60,7 @@ export class Game{
         nome:string,
         id:number
     } | null = null 
-    socketConnection = new WebSocket("ws://"+PUBLIC_BACKEND_URL+"/upgrade")
+    socketConnection = new WebSocket("wss://"+PUBLIC_BACKEND_URL+"/upgrade")
                   
 
 
