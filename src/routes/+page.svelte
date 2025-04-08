@@ -13,6 +13,8 @@
 
     function keyUpEvent(e:KeyboardEvent){
         if(e.key==="ArrowUp" || e.key===" "){
+            e.preventDefault()
+
             game.keyUpRelease()
         }
         if(e.key==="ArrowLeft"){
@@ -26,9 +28,10 @@
 
     function keyDownEvent(e:KeyboardEvent){
 
-
-        if(e.key==="ArrowUp" ){
+        if(e.key==="ArrowUp"  || e.key===" "){
             game.keyUpActions()
+            e.preventDefault()
+
         }
         if(e.key==="ArrowLeft"){
             game.keyLeftActions()
@@ -87,9 +90,9 @@
 
 <svelte:document onkeydown={keyDownEvent} onkeyup={keyUpEvent}/>
 
-<div class="flex  items-center justify-center text-amber-50 w-full h-full gap-5 px-12">
+<div class="flex flex-col items-center p-20 text-amber-50 w-full h-screen gap-5 px-12">
 
-    <div class="game border-[6px] w-[900px] h-[600px] overflow-hidden rounded-lg border-amber-100 relative">
+    <div class="game border-[6px] w-[1280px] h-[600px] shrink-0 overflow-hidden rounded-lg border-amber-100 relative">
             {#if infoUser.info.freezeGame}
                 <div class="absolute top-0 left-0 w-full h-full">
                     <StartMenu onLogin={(r)=>{
@@ -98,7 +101,6 @@
                             nome:r.nome,
                             skin:infoUser.info.skin,
                         }
-                        console.log(infoUser.info.skin)
                         storageService.storeData("flappy",game.dadosJogador)
                         game.socketConnection.send(JSON.stringify({
                             tipo:"conectar",

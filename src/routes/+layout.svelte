@@ -6,7 +6,7 @@
 </script>
 
 <div class="w-screen h-screen bgG">
-	<div class="w-full h-full bg-slate-900/98">
+	<div class="w-full h-full overflow-y-auto bg-slate-900/98">
 		{@render children()}
 	</div>
 </div>

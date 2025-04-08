@@ -143,10 +143,10 @@ export class Game{
 
         const poderAgora = Math.random()*50
         if(poderAgora>46){
-            powerSlow.x = canoBaixo.x  + gap/2
-            powerSlow.y = canoBaixo.y -  60
-            this.world.addChild(powerSlow)
-            this.stagePipes.attach(powerSlow)    
+            // powerSlow.x = canoBaixo.x  + gap/2
+            // powerSlow.y = canoBaixo.y -  60
+            // this.world.addChild(powerSlow)
+            // this.stagePipes.attach(powerSlow)    
         }
         
         this.world.addChild(hitbox)
@@ -162,8 +162,8 @@ export class Game{
 
     async pipesGen(){
 
-        const totalCanos = 8
-        const primeiroCanoX = 800
+        const totalCanos = 30
+        const primeiroCanoX = 1000
         const distanciaCanos = 250
 
         let canos = this.stagePipes.renderLayerChildren.filter((obj)=>obj.label=="cano")
@@ -185,14 +185,10 @@ export class Game{
             this.gerarCanos(primeiroCanoX+(distanciaCanos*i),this.mapa[i].y,this.mapa[i].gap,this.mapa[i].marginLeft)
         }
 
-
-
-
-
     }
 
     async terrenoParallaxGen(){
-        const totalTiles = 12
+        const totalTiles = 20
         let terrenos = this.stageScene.renderLayerChildren.filter((obj)=>obj.label==="terreno")
         while(terrenos.length<totalTiles){
             const sizeTerreno = this.app.screen.width/5
@@ -469,9 +465,21 @@ export class Game{
         const yP = this.player!.getBounds().y
         const wP = this.player!.getBounds().width
         const hP = this.player!.getBounds().height
-
         const allLayers = [...this.stagePipes.renderLayerChildren,...this.stageScene.renderLayerChildren]
 
+        if(yP<-80){
+            this.habilitys.isDead=true
+            this.game.currentTime=0
+            Sound.sound.play('hit');
+            setTimeout(()=>{
+                Sound.sound.play('die');
+            },500)
+            setTimeout(()=>{
+                infoUser.info.freezeGame=true
+                this.resetarPlayer()
+                this.resetarCenario()
+            },1000)
+        }
         allLayers.forEach((obj)=>{
             const xO = obj.getBounds().x
             const yO = obj.getBounds().y
@@ -482,6 +490,9 @@ export class Game{
                 xP < xO + wO &&    // Lado esquerdo do player antes do lado direito do objeto
                 yP + hP > yO &&    // Base do player passa o topo do objeto
                 yP < yO + hO) {    // Topo do player antes da base do objeto
+                
+                if(this.habilitys.isDead) return
+
                 
 
                 if(obj.label==="powerSlow"){
