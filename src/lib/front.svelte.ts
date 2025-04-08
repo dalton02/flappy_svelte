@@ -3,7 +3,7 @@ class Front{
     info = $state({
         logado:false,
         freezeGame:true,
-        skin:"base"
+        skin:"black"
     })
 
     

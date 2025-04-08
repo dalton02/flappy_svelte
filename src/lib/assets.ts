@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { sound } from '@pixi/sound';
+import * as PIXIGIF from "pixi.js/gif"
 export class Assets{
 
     app: PIXI.Application
@@ -14,14 +14,18 @@ export class Assets{
 
     }
 
-    async gerarPersonagem():Promise<PIXI.Sprite>{
+    async gerarPersonagem(skin:string):Promise<PIXIGIF.GifSprite>{
+        const texture = await PIXI.Assets.load(`/skins/${skin}.gif`);
 
-        const texture = await PIXI.Assets.load('/bird.png');
-        const sprite = new PIXI.Sprite(texture)
-        sprite.scale.set(1.4,1.4)
+        const sprite = new PIXIGIF.GifSprite(texture)
+
+        sprite.width = 20
+        sprite.height = 20
         return sprite
 
     }
+
+
 
     async gerarSlowPower():Promise<PIXI.Sprite>{
         const texture = await PIXI.Assets.load('/bird.png');

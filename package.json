@@ -39,6 +39,7 @@
 		"vite": "^6.0.0"
 	},
 	"dependencies": {
+		"@pixi/gif": "^3.0.1",
 		"@pixi/sound": "^6.0.1",
 		"@prisma/client": "^6.5.0",
 		"@sveltejs/adapter-static": "^3.0.8",

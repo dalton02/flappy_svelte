@@ -50,7 +50,8 @@
                 const data = response.data.data
                 game.dadosJogador={
                     id:data.id,
-                    nome:data.nome
+                    nome:data.nome,
+                    skin:infoUser.info.skin
                 }
                 storageService.storeData("flappy",game.dadosJogador)
                 game.socketConnection.onopen = (e) => {
@@ -64,7 +65,10 @@
                                     x: 0,
                                     y: 0
                                 },
-                                pontuacao: parseInt(data.pontuacao)
+                                pontuacao: parseInt(data.pontuacao),                    
+                                skin:infoUser.info.skin,
+                                gametime:0,
+                                status:"idle"
                             }
                         }));
                     } else {
@@ -91,9 +95,10 @@
                     <StartMenu onLogin={(r)=>{
                         game.dadosJogador={
                             id:r.id,
-                            nome:r.nome
+                            nome:r.nome,
+                            skin:infoUser.info.skin,
                         }
-                        console.log(r)
+                        console.log(infoUser.info.skin)
                         storageService.storeData("flappy",game.dadosJogador)
                         game.socketConnection.send(JSON.stringify({
                             tipo:"conectar",
@@ -104,7 +109,10 @@
                                     x:0,
                                     y:0
                                 },
-                                pontuacao: parseInt(r.pontuacao)
+                                pontuacao: parseInt(r.pontuacao),
+                                skin:infoUser.info.skin,
+                                gametime:0,
+                                status:"idle"
                             }
                         }))
                     }}/>

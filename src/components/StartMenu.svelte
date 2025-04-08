@@ -17,9 +17,25 @@
 
     const skins = [
         {
-            value:"base",
-            icon:"/bird.png"
-        }
+            value:"black",
+            icon:"/skins/black.gif"
+        },
+        {
+            value:"red",
+            icon:"/skins/red.gif"
+        },
+        {
+            value:"blue",
+            icon:"/skins/blue.gif"
+        },
+        {
+            value:"dead",
+            icon:"/skins/dead.gif"
+        },
+        {
+            value:"tralalelo",
+            icon:"/skins/tralalelo.gif"
+        },
     ]
 
     let formCadastro = $state({
@@ -125,7 +141,7 @@
             <div class="grid grid-cols-3 gap-x-4">
                 {#each skins as skin}
                     <button class="flex items-center justify-center group w-[120px] relative
-                    aspect-square rounded-lg hover:bg-amber-50 bg-emerald-300 border-4 border-black" onclick={()=>{}}>
+                    aspect-square rounded-lg hover:bg-amber-50 bg-emerald-300 border-4 border-black" onclick={()=>{infoUser.info.skin=skin.value}}>
                         {#if skin.value===infoUser.info.skin}
                             <div class="rounded-full absolute top-[-12px] right-[-10px] bg-black">
                                 <SvgCheck props={{
@@ -135,7 +151,7 @@
                                 }}/>    
                             </div>
                         {/if}
-                        <img src="/bird.png" class="group-hover:scale-[1.2] transition-all duration-200 w-[50px]" alt="">
+                        <img src={skin.icon} class="group-hover:scale-[1.2] transition-all duration-200 w-[50px]" alt="">
                     </button>
                 {/each}
             </div>

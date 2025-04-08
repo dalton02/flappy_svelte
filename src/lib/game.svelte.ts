@@ -1,4 +1,6 @@
 import * as PIXI from 'pixi.js';
+
+import * as PIXIGIF from "pixi.js/gif"
 import { Assets } from './assets';
 import * as Sound from '@pixi/sound';
 import { io } from 'socket.io-client';
@@ -6,6 +8,7 @@ import { Player } from './player';
 import infoUser from './front.svelte';
 import { PUBLIC_BACKEND_URL, PUBLIC_SOCKET_URL } from '$env/static/public';
 import gen from "random-seed"
+import declarator from './declaration';
 
 export class Game{
     
@@ -18,7 +21,7 @@ export class Game{
     stageGUIBoard:PIXI.IRenderLayer = new PIXI.RenderLayer() //Colocar texto,botoes,etc
     stageScore : PIXI.IRenderLayer = new PIXI.RenderLayer()
     ticker: PIXI.Ticker = new PIXI.Ticker
-    player:PIXI.Sprite = new PIXI.Sprite(undefined);
+    player:PIXIGIF.GifSprite | null = null;
     assetGenerator = new Assets(this.app)
     world: PIXI.Container = new PIXI.Container({
         width:1280,
@@ -58,7 +61,8 @@ export class Game{
     
     dadosJogador:{
         nome:string,
-        id:number
+        id:number,
+        skin:string
     } | null = null 
     socketConnection = new WebSocket(PUBLIC_SOCKET_URL)
                   
@@ -73,8 +77,8 @@ export class Game{
     async cenarioInit(){
 
         this.app.stage.addChild(this.world);
-        this.world.addChild(this.player)
-        this.stagePlayer.attach(this.player)
+        this.world.addChild(this.player!)
+        this.stagePlayer.attach(this.player!)
         this.world.addChild(this.stagePipes)
         this.world.addChild(this.stageScene)
         this.world.addChild(this.stagePlayer)
@@ -93,8 +97,8 @@ export class Game{
     }
 
     async resetarPlayer(){
-        this.player.x = this.app.screen.width/2 - this.player.width/2
-        this.player.y = this.app.screen.height/2-200
+        this.player!.x = this.app.screen.width/2 - this.player!.width/2
+        this.player!.y = this.app.screen.height/2-200
         this.habilitys.isDead=false
         this.habilitys.score=0
         this.terrenoParallaxGen()
@@ -235,7 +239,7 @@ export class Game{
         Sound.sound.add('die', '/sons/die.mp3');
         Sound.sound.add('point','/sons/point.mp3');
         
-        this.player = await this.assetGenerator.gerarPersonagem()    
+        this.player = await this.assetGenerator.gerarPersonagem(infoUser.info.skin)    
         this.resetarPlayer()        
         await this.cenarioInit()
 
@@ -244,13 +248,16 @@ export class Game{
             if(!this.dadosJogador) return
             this.socketConnection.send(mensagemFormatada("atualizarPlayer",{
                 coordenadas:{
-                    x: this.player.x,
-                    y: this.player.y,
-                    rotacao:this.player.rotation
+                    x: this.player!.x,
+                    y: this.player!.y,
+                    rotacao:this.player!.rotation
                 },
                 id:this.dadosJogador.id,
                 nome:this.dadosJogador.nome,
-                pontuacao: this.habilitys.score
+                pontuacao: this.habilitys.score,
+                skin:this.dadosJogador.skin,
+                gametime:this.game.currentTime,
+                status:this.habilitys.isDead ? "dead" : "alive"
             }))    
         },200)
 
@@ -258,8 +265,25 @@ export class Game{
         this.app.ticker.add(async(t) => {        
             this.ticker = t
             await this.guiMan()
+            await this.skinM()
             await this.gameLoop()
         })    
+    }
+
+    async skinM(){
+        if(!this.dadosJogador) return
+        if(!this.player) return
+        if(infoUser.info.skin!==this.dadosJogador?.skin){
+            this.dadosJogador.skin = infoUser.info.skin
+            this.world.removeChild(this.player!)
+            this.stagePlayer.detach(this.player!)
+            this.player.texture.destroy()
+            this.player.destroy()
+            this.player = await this.assetGenerator.gerarPersonagem(this.dadosJogador.skin)
+            this.world.addChild(this.player!)
+            this.stagePlayer.attach(this.player!)
+            this.resetarPlayer()
+        }
     }
 
     async guiMan(){
@@ -290,8 +314,10 @@ export class Game{
 
     interpolacaoPlayers(){
         this.jogadores.forEach((obj)=>{
+
             const rotationForce = 0.09;
             const limitRotation = 0.8
+            if(!obj.sprite) return
             const sprite = obj.sprite
             if(!sprite) return
     
@@ -318,14 +344,14 @@ export class Game{
 
 
             let inicioJogo = false
-            if(obj.nextPos.x<this.app.screen.width/2 - this.player.width/2 + 10){
+            if(obj.nextPos.x<this.app.screen.width/2 - this.player!.width/2 + 10){
                 inicioJogo=true
             }
             if(sprite.x>=obj.nextPos.x || inicioJogo){
                 sprite.x = obj.nextPos.x
             }
             if(!inicioJogo && sprite.x<obj.nextPos.x){
-                sprite.x+=this.habilitys.vX
+                sprite.x+= declarator.calculateSpeed(obj.player!.gametime)
             }
             const xPosTag = sprite.x - obj.tag.width/2 + sprite.width/2 
             const yPosTag = sprite.y - obj.tag.height - 10 
@@ -362,11 +388,13 @@ export class Game{
                         x:number,
                         y:number,
                         rotacao:number,
-                    }
+                    },
+                    skin:string,
+                    gametime:number,
+                    status:string
                 }[],
                 mensagem:string
                 }
-                console.log(tmp)
                 const dados = tmp.jogadores
                 for(const dado of dados){
                     if(dado.id===this.dadosJogador!.id) continue
@@ -374,6 +402,13 @@ export class Game{
                     if(!this.jogadores.some(obj=>obj.player!.id===dado.id)){
                         const novoJogador = new Player(this.assetGenerator, this.world, this.stageGhostPlayers, dado)
                         this.jogadores.push(novoJogador);
+                    }
+                    else{
+                        this.jogadores.filter((obj)=>{
+                            if(obj.player!.id===dado.id){
+                                obj.atualizarSkin(dado.skin)
+                            }
+                        })
                     }
                 }
                 
@@ -411,18 +446,18 @@ export class Game{
        
         if(this.habilitys.slowPower){
 
-            this.player.x+=1.7
+            this.player!.x+=1.7
 
 
         }
         else{
 
-            const velocidade = this.habilitys.vX+(this.game.currentTime) > this.habilitys.maxVx ? this.habilitys.maxVx  : this.habilitys.vX+(this.game.currentTime)       
-            this.player.x+=velocidade
+            const velocidade = declarator.calculateSpeed(this.game.currentTime)
+            this.player!.x+=velocidade
                 
         }
        
-        this.world.x = -(this.player.x - this.app.screen.width/2)
+        this.world.x = -(this.player!.x - this.app.screen.width/2)
         const texto = this.stageScore.renderLayerChildren[0] as PIXI.Text
         texto.x = -this.world.x +20
         texto.text = "Score: "+this.habilitys.score
@@ -430,10 +465,10 @@ export class Game{
 
     async checarColisoes(){
 
-        const xP = this.player.getBounds().x
-        const yP = this.player.getBounds().y
-        const wP = this.player.getBounds().width
-        const hP = this.player.getBounds().height
+        const xP = this.player!.getBounds().x
+        const yP = this.player!.getBounds().y
+        const wP = this.player!.getBounds().width
+        const hP = this.player!.getBounds().height
 
         const allLayers = [...this.stagePipes.renderLayerChildren,...this.stageScene.renderLayerChildren]
 
@@ -502,24 +537,24 @@ export class Game{
         this.habilitys.vY = -this.habilitys.maxVy>this.habilitys.vY ? -this.habilitys.maxVy : this.habilitys.vY
         
 
-        if(this.player.rotation>limitRotation){
-            this.player.rotation = limitRotation
+        if(this.player!.rotation>limitRotation){
+            this.player!.rotation = limitRotation
         }
-        if(this.player.rotation<-limitRotation){
-            this.player.rotation = -limitRotation
+        if(this.player!.rotation<-limitRotation){
+            this.player!.rotation = -limitRotation
         }
         
         if(this.habilitys.vY>0){
-            this.player.rotation+=rotationForce
+            this.player!.rotation+=rotationForce
         }
         else{
-            this.player.rotation-=rotationForce
+            this.player!.rotation-=rotationForce
 
         }
 
  
         if(this.habilitys.isDead){
-            this.player.y += this.physics.gravity*20;
+            this.player!.y += this.physics.gravity*20;
             return
         }
 
@@ -528,7 +563,7 @@ export class Game{
             this.habilitys.jump-=this.physics.gravity/2;
             if(this.habilitys.jump<0) this.habilitys.jump=0; 
         }
-        this.player.y += this.habilitys.vY;
+        this.player!.y += this.habilitys.vY;
         
 
     }
