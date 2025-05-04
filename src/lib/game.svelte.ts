@@ -317,8 +317,6 @@ export class Game{
             const sprite = obj.sprite
             if(!sprite) return
     
-
-
             if(obj.nextPos.y>sprite.y){
                 sprite.y+=2
             }

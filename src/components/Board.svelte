@@ -10,7 +10,7 @@
     let show = $state(true)
     async function listar(){
         const response = await axios.get(PUBLIC_BACKEND_URL+"/scoreboard");
-        scores = response.data.data
+        scores = response.data.data ?? []
     }
     function shuffleScores() {
     for (let i = scores.length - 1; i > 0; i--) {
